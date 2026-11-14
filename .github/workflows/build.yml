@@ -1,0 +1,36 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ekstrak source
+        run: unzip -q Islandify-1.6-noInternet.zip
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Siapkan Android SDK 35
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Build APK release
+        working-directory: Islandify-1.6-noInternet
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease -PallowDebugRelease --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Islandify-apk
+          path: Islandify-1.6-noInternet/app/build/outputs/apk/release/*.apk
